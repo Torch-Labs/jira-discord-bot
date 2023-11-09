@@ -24,6 +24,7 @@ def get_record(email):
         return (False)
     for record in data['records']:
         if "Email" in record['fields']:
+            print(record)
             if record['fields']['Email'] == email:
                 record_url = f"https://airtable.com/{app_id}/{table_id}/{record['id']}"
                 firbase_id = None

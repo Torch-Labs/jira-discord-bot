@@ -108,7 +108,7 @@ async def discord_auth_error(ctx):
             redirect_url: {redirect_url}
             server_id: {server_id}"""
             if not record:
-                description += "\nFailed to fetch airtable data"
+                description += f"\nFailed to fetch airtable data {email}"
             else:
                 description += f"""
                 airtable url: {record[0]}
