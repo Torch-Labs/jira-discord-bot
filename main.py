@@ -3,13 +3,16 @@ from interactions import StringSelectMenu, ModalContext
 from interactions.api.events import Component
 import os
 from dotenv import load_dotenv
-from interactions.models.discord import components
+from airtable import get_record
+from jira import create_ticket
 
 load_dotenv()
 token = os.getenv("token")
 if not token:
     token = ""
 bot = interactions.Client(token=token)
+
+text_1 = "Please follow the strps in the guide Link - https://docs.torchlabs.xyz/errors-and-faq/discord/getting-an-auth-error-coming-when-accessing-to-user-dashboard \nPlease fill the following form once the steps in the guide are completed"
 
 
 @interactions.slash_command(name="bug", description="create a bug report")
@@ -38,6 +41,7 @@ async def on_componenet(event: Component):
 
 
 async def discord_auth_error(ctx):
+    email = ""
     form_button = interactions.Button(
         style=interactions.ButtonStyle.PRIMARY,
         label="Open Form",
@@ -69,13 +73,13 @@ async def discord_auth_error(ctx):
             title="Details",
         )
         await component.ctx.send_modal(details_form)
-        detail_response : ModalContext = await bot.wait_for_modal(details_form)
+        detail_response: ModalContext = await bot.wait_for_modal(details_form)
         client_id = detail_response.responses["client_id"]
         client_secret = detail_response.responses["client_secret"]
         redirect_url = detail_response.responses["redirect_url"]
         server_id = detail_response.responses["server_id"]
         await detail_response.send("Creating your ticket")
-        print(client_id, client_secret, redirect_url, server_id)
+        return (client_id, client_secret, redirect_url, server_id)
 
     async def send_email_form(component: Component):
         email_form = interactions.Modal(
@@ -89,11 +93,28 @@ async def discord_auth_error(ctx):
         )
         await component.ctx.send_modal(email_form)
         email_resaponse: ModalContext = await bot.wait_for_modal(email_form)
+        global email
         email = email_resaponse.responses["email_input"]
-        email_resaponse_message = await email_resaponse.send("Please follow the strps in the guide Link - https://docs.torchlabs.xyz/errors-and-faq/discord/getting-an-auth-error-coming-when-accessing-to-user-dashboard \nPlease fill the following form once the steps in the guide are completed",components=form_button)
+
+        email_resaponse_message = await email_resaponse.send(text_1, components=form_button)
         try:
-            await bot.wait_for_component(
-                components=form_button, check=send_details_form, timeout=300)
+            open_form_btt = await bot.wait_for_component(components=form_button,  timeout=300)
+            client_id, client_secret, redirect_url, server_id = await send_details_form(open_form_btt)
+            print(email, client_id, client_secret, redirect_url, server_id)
+            record = get_record(email)
+            description = f"""
+            client_id: {client_id}
+            client_secret: {client_secret}
+            redirect_url: {redirect_url}
+            server_id: {server_id}"""
+            if not record:
+                description += "\nFailed to fetch airtable data"
+            else:
+                description += f"""
+                airtable url: {record[0]}
+                "Firebase id: {record[1]}"
+                """
+            create_ticket("Update discord Authentication", description)
         except TimeoutError:
             form_button.disabled = True
             await email_resaponse_message.edit(components=form_button)
