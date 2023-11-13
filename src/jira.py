@@ -52,7 +52,6 @@ def create_ticket(name, description):
 
     if response.status_code == 201:
         new_issue = response.json()
-        print(new_issue)
         pull_issue(new_issue['key'])
         return (True)
     else:

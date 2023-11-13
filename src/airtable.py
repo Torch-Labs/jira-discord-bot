@@ -5,8 +5,8 @@ import json
 
 load_dotenv()
 
-app_id = "appwSSjovGODhjRBP"
-table_id = "tblwq7fJoxj59YrAD"
+app_id = "appJelwg44LdTySK2"
+table_id = "tblJMAsBXVgFLdsJQ"
 
 token = os.getenv("airtable_token")
 if not token:
@@ -24,7 +24,6 @@ def get_record(email):
         return (False)
     for record in data['records']:
         if "Email" in record['fields']:
-            print(record)
             if record['fields']['Email'] == email:
                 record_url = f"https://airtable.com/{app_id}/{table_id}/{record['id']}"
                 firbase_id = None
