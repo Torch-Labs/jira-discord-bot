@@ -222,7 +222,7 @@ async def discord_auth_error(ctx):
         await component.ctx.send_modal(email_form)
         email_resaponse: ModalContext = await bot.wait_for_modal(email_form)
         global email
-        email = email_resaponse.responses["email_input"]
+        email = email_resaponse.responses["email_input_auth"]
 
         email_resaponse_message = await email_resaponse.send(text_1, components=form_button)
         try:
