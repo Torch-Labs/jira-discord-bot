@@ -61,16 +61,14 @@ async def on_componenet(event: Component):
                     await reset_password(ctx)
 
 
-email_button = interactions.Button(
+async def reset_password(ctx):
+    email_button = interactions.Button(
         style=interactions.ButtonStyle.PRIMARY,
         label="Enter Email",
-        custom_id="Email Button",
+        custom_id="Email Button pass",
     )
-
-
-async def reset_password(ctx):
     message = await ctx.send(
-        "What is your TL admin dashboard login email?",
+        "Password Reset request\nWhat is your TL admin dashboard login email?",
         components=email_button)
     try:
         email_button_response = await bot.wait_for_component(
@@ -90,19 +88,25 @@ async def reset_password(ctx):
     )
     await email_button_response.ctx.send_modal(email_form)
     email_resaponse: ModalContext = await bot.wait_for_modal(email_form)
+    message = await email_resaponse.send("Creating your ticket...")
     email = email_resaponse.responses["email_input"]
     record = get_record(email)
     if not record:
         description = f"\nFailed to fetch airtable data {email}"
     else:
         description = f"\nairtable url: {record[0]}\nFirebase id: {record[1]}"
-    await email_resaponse.send("Created your ticked you will recive a reset link shortly")
     create_ticket("Password resetting link", description)
+    await message.edit(content="Created your ticked you will recive a reset link shortly")
 
 
 async def change_domain(ctx):
+    email_button = interactions.Button(
+        style=interactions.ButtonStyle.PRIMARY,
+        label="Enter Email",
+        custom_id="Email Button dom",
+    )
     message = await ctx.send(
-        "What is your TL admin dashboard login email?",
+        "Change Domain\nWhat is your TL admin dashboard login email?",
         components=email_button)
     try:
         email_button_response = await bot.wait_for_component(
@@ -148,6 +152,7 @@ async def change_domain(ctx):
     )
     await domain_button_click.ctx.send_modal(domain_form)
     domain_response: ModalContext = await bot.wait_for_modal(domain_form)
+    message = await domain_response.send("Creating your ticket....")
     domain = domain_response.responses["domain_input"]
     record = get_record(email)
     description = f"Domain: {domain}"
@@ -155,12 +160,16 @@ async def change_domain(ctx):
         description += f"\nFailed to fetch airtable data {email}"
     else:
         description += f"\nairtable url: {record[0]}\nFirebase id: {record[1]}"
-    await domain_response.send("Your ticket has been created!")
     create_ticket("Update Killer dash records", description)
+    await message.edit(content="Your ticket has been created!")
     
 
-
 async def discord_auth_error(ctx):
+    email_button = interactions.Button(
+        style=interactions.ButtonStyle.PRIMARY,
+        label="Enter Email",
+        custom_id="Email Button error",
+    )
     form_button = interactions.Button(
         style=interactions.ButtonStyle.PRIMARY,
         label="Open Form",
@@ -205,7 +214,7 @@ async def discord_auth_error(ctx):
             interactions.InputText(
                 label="email",
                 style=interactions.TextStyles.SHORT,
-                custom_id="email_input",
+                custom_id="email_input_auth",
                 placeholder="example@mail.com"
             ),
             title="Email Form",
@@ -218,27 +227,28 @@ async def discord_auth_error(ctx):
         email_resaponse_message = await email_resaponse.send(text_1, components=form_button)
         try:
             open_form_btt = await bot.wait_for_component(components=form_button,  timeout=300)
-            client_id, client_secret, redirect_url, server_id = await send_details_form(open_form_btt)
-            print(email, client_id, client_secret, redirect_url, server_id)
-            record = get_record(email)
-            description = f"""
-            client_id: {client_id}
-            client_secret: {client_secret}
-            redirect_url: {redirect_url}
-            server_id: {server_id}"""
-            if not record:
-                description += f"\nFailed to fetch airtable data {email}"
-            else:
-                description += f"""
-                airtable url: {record[0]}
-                "Firebase id: {record[1]}"
-                """
-            create_ticket("Update discord Authentication", description)
         except TimeoutError:
             form_button.disabled = True
             await email_resaponse_message.edit(components=form_button)
+            return ()
+        client_id, client_secret, redirect_url, server_id = await send_details_form(open_form_btt)
+        print(email, client_id, client_secret, redirect_url, server_id)
+        record = get_record(email)
+        description = f"""
+        client_id: {client_id}
+        client_secret: {client_secret}
+        redirect_url: {redirect_url}
+        server_id: {server_id}"""
+        if not record:
+            description += f"\nFailed to fetch airtable data {email}"
+        else:
+            description += f"""
+            airtable url: {record[0]}
+            "Firebase id: {record[1]}"
+            """
+        create_ticket("Update discord Authentication", description)
 
-    message = await ctx.send("What is your TL admin dashboard login email?",
+    message = await ctx.send("Atuh error \nWhat is your TL admin dashboard login email?",
                              components=email_button)
     try:
         await bot.wait_for_component(
